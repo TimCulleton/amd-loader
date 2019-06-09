@@ -1,0 +1,13 @@
+# Ignore Node Modules
+node_modules/
+
+# Ignore TS Build artifacts
+**/*.js
+**/*.d.ts
+**/*.js.map
+
+# Track Jest config
+!/jest.config.js
+
+# Track everything in here
+!/__tests__/testData/**/*
