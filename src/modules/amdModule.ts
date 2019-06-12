@@ -97,15 +97,22 @@ export async function loadModule(amdModule: IAmdModule): Promise<void> {
         ${moduleContents}
     })`;
 
-    // Execute code
+    // Compile the code
     const compiledWrapper = vm.runInThisContext(wrappedContents, {
         displayErrors: true,
     });
+
+    // Execute the code, sending in 'this' as dependency to wrapper function
     compiledWrapper.apply(global, [exports]);
 }
 
 
-// Module is defined -> publish defined event
+/**
+ * 
+ * @param moduleId 
+ * @param dependencies 
+ * @param factory 
+ */
 export function defineModule(moduleId: string, dependencies: string[], factory: Function) {
 
     let amdModule = ModuleCache[moduleId];
@@ -118,9 +125,10 @@ export function defineModule(moduleId: string, dependencies: string[], factory: 
     amdModule.dependencies = dependencies;
     amdModule.factory = factory;
 
-
     amdModule.emit("defined");
 }
+
+let test: NodeModule;
 
 export class AmdModule implements IAmdModule {
     public name: string;
@@ -151,20 +159,20 @@ export class AmdModule implements IAmdModule {
     public on(evtId: any, callback: any) {
 
         let eventEmitter: events.EventEmitter | undefined;
-        if (evtId === "defined") {
-            if (this._defined) {
-                callback(this);
-            } else {
-                eventEmitter = this._event.on("defined", callback);
-            }
-        } else if (evtId === "ready") {
-            if (this.loaded) {
-                callback(this);
-            } else {
-                eventEmitter = this._event.on("ready", callback);
-            }
+        if (evtId === "defined" && !this._defined) {
+            eventEmitter = this._event.on("defined", callback);
+        } else if (evtId === "ready" && !this.loaded) {
+            eventEmitter = this._event.on("ready", callback);
         } else if (evtId === "error") {
             eventEmitter = this._event.on("error", callback);
+        }
+
+        // In the case that we don't have an event emitter
+        // trigger the callback on the next tick to keep this function 'async'
+        if (!eventEmitter) {
+            process.nextTick(() => {
+                callback(this);
+            });
         }
 
         return eventEmitter ? () => { this._event.off(evtId, callback); } : () => {};
@@ -185,6 +193,8 @@ export class AmdModule implements IAmdModule {
     }
 
     public async load(): Promise<this> {
+        // cache the promise to ensure that the loading only occurs
+        // once
         if (!this._moduleLoader) {
             this._moduleLoader = this._loadModule();
         }
@@ -198,7 +208,7 @@ export class AmdModule implements IAmdModule {
         } else {
 
             const dependenciesToLoad = this.dependencies
-            .filter(id => !ModuleCache[id])
+            .filter(id => !ModuleCache[id] || !ModuleCache[id].loaded)
             .map(depModule => requireModule(depModule));
 
             await Promise.all(dependenciesToLoad);
@@ -210,9 +220,3 @@ export class AmdModule implements IAmdModule {
         }
     }
 }
-
-// Set global define function
-// tslint:disable-next-line: no-string-literal
-global["define"] = (moduleID: string, dependencies: string[], factory: Function) => {
-    defineModule(moduleID, dependencies, factory);
-};
