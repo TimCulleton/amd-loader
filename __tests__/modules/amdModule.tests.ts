@@ -31,14 +31,13 @@ describe(`AMD Module Tests`, () => {
         const moduleName = `simpleModules/moduleA`;
         expect(AmdModule.ModuleCache[moduleName]).toBeFalsy();
 
-        // tslint:disable-next-line: no-string-literal
-        global["_modulePath"] = "abc";
         AmdModule.defineModule(moduleName, [], () => "fsfsd");
         expect(AmdModule.ModuleCache[moduleName]).toBeTruthy();
     });
 
     it(`Verify that global define exists`, () => {
-        const defineType = typeof define;
+        // tslint:disable-next-line: no-string-literal
+        const defineType = typeof global["define"];
         expect(defineType).toBe("function");
     });
 
