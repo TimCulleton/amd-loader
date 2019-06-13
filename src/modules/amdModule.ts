@@ -21,12 +21,27 @@ export interface IAmdModule {
     load(): Promise<this>;
 }
 
+/**
+ * Helper object to assist with 
+ * resolving the module path and getting the module contents
+ */
 export interface IModuleGetter {
+
+    /**
+     * For the supplied moduleId get the path to the module resource.
+     * This could be a single module file or a concatenated module
+     */
     getModulePath: (moduleName: string) => string;
 
+    /**
+     * For the supplied the module path get the module contents.
+     */
     getModuleContents: (modulePath: string) => Promise<string>;
 }
 
+/**
+ * Global Module Cache that keeps track of all the current modules
+ */
 export let ModuleCache: {[key: string]: IAmdModule} = {};
 
 export function clearModuleCache(): {[key: string]: IAmdModule} {
@@ -42,7 +57,17 @@ let ModuleGetter: IModuleGetter = {
     },
 };
 
-
+/**
+ * AMD version of require.
+ * This will attempt to find the module in the cache and return that, if it
+ * has been loaded.
+ *
+ * If unable to find the module or it has not been loaded then it will
+ * be loaded. Causing the module to be loaded as well as its dependencies.
+ * Where upon the module emitting the 'ready' event it will be resolved in
+ * promise.
+ * @param {string} moduleId - AMD Module to be loaded 
+ */
 export function requireModule(moduleId: string): Promise<IAmdModule> {
     return new Promise<IAmdModule>((resolve, reject) => {
 
@@ -68,12 +93,23 @@ export function requireModule(moduleId: string): Promise<IAmdModule> {
     });
 }
 
-
 export function updateModuleGetter<K extends keyof IModuleGetter>(key: K, value: IModuleGetter[K]): void {
     ModuleGetter[key] = value;
 }
 
-
+/**
+ * Load a AMD module by first
+ * getting the contents of file and wrapping the contents
+ * in a module function to inject the 'define' function.
+ *
+ * This will cause the AMD module to then invoke the define function
+ * completing the initial registration. Once the module has been 'defined'
+ *
+ * The module will then be loaded, causing any of its dependencies to be loaded.
+ * @param {IAmdModule} amdModule - AMD Module that is to be loaded.
+ * This can be created via the require or during a concatenated module load
+ * 
+ */
 export async function loadModule(amdModule: IAmdModule): Promise<void> {
     const modulePath = ModuleGetter.getModulePath(amdModule.name);
     amdModule.path = modulePath;
@@ -106,12 +142,18 @@ export async function loadModule(amdModule: IAmdModule): Promise<void> {
     compiledWrapper.apply(global, [exports]);
 }
 
-
 /**
+ * Define a AMD Module.
+ * This registers the module Id with its dependencies and factory method
+ * enabling the full 'load' of the module to be performed later.
  * 
- * @param moduleId 
- * @param dependencies 
- * @param factory 
+ * Note - this function will be invoked during a module 'load' IE
+ * when require loads and executes the file.
+ * @param {string} moduleId - Module Id that this definition will be registered as
+ * @param {string[]} dependencies - Array of module ids that are required to be loaded and 
+ * passed into the factory function
+ * @param {function} factory - Factory function that takes dependencies to execute the actual
+ * 'module' code. The result of which will be stored on the modules exports. 
  */
 export function defineModule(moduleId: string, dependencies: string[], factory: Function) {
 
@@ -127,8 +169,6 @@ export function defineModule(moduleId: string, dependencies: string[], factory: 
 
     amdModule.emit("defined");
 }
-
-let test: NodeModule;
 
 export class AmdModule implements IAmdModule {
     public name: string;
