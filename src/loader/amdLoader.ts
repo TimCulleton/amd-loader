@@ -9,5 +9,5 @@ export const LoaderConfig: ConfigWrapper<IAmdLoaderConfig> = new ConfigWrapper()
 
 
 export function requireModule(moduleId: string): Promise<IAmdModule> {
-
+    throw new Error("not implemented");
 }
