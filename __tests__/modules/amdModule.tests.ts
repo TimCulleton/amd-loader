@@ -1,7 +1,7 @@
-import * as AmdModule from "../../src//modules/amdModule";
 import fs from "fs";
-import path, { dirname } from "path";
+import path from "path";
 import util from "util";
+import * as AmdModule from "../../src//modules/amdModule";
 
 const readFile = util.promisify(fs.readFile);
 
