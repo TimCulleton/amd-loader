@@ -1,25 +1,10 @@
 
 import events from "events";
 import vm from "vm";
-
-export type AmdModuleListener = (amdModule: IAmdModule) => void;
-export type EventDisconnect = () => void;
-
-export interface IAmdModule {
-    name: string;
-    path: string;
-    dependencies: string[];
-    factory: Function;
-    loaded: boolean;
-    exports: any;
-
-    on(evtId: "defined" | "ready", callback: AmdModuleListener): EventDisconnect;
-    on(evtId: "error", callback: (e: Error) => void ): EventDisconnect;
-
-    emit(evtId: "defined" | "ready"): boolean;
-
-    load(): Promise<this>;
-}
+import { IAmdModule } from "../types/amdModuleTypes";
+import { FactoryFn } from "../types/amdModuleTypes";
+import { GenericFunction0 } from "../types/commonTypes";
+import { GenericFunction1 } from "../types/commonTypes";
 
 /**
  * Helper object to assist with 
@@ -155,7 +140,7 @@ export async function loadModule(amdModule: IAmdModule): Promise<void> {
  * @param {function} factory - Factory function that takes dependencies to execute the actual
  * 'module' code. The result of which will be stored on the modules exports. 
  */
-export function defineModule(moduleId: string, dependencies: string[], factory: Function) {
+export function defineModule(moduleId: string, dependencies: string[], factory: FactoryFn) {
 
     let amdModule = ModuleCache[moduleId];
     if (!amdModule) {
@@ -174,7 +159,7 @@ export class AmdModule implements IAmdModule {
     public name: string;
     public path: string;
     public dependencies: string[];
-    public factory: Function;
+    public factory: FactoryFn;
     public loaded: boolean;
     public exports: any;
 
@@ -194,8 +179,8 @@ export class AmdModule implements IAmdModule {
         this._moduleLoader = undefined;
     }
 
-    public on(evtId: "defined" | "ready", callback: AmdModuleListener): EventDisconnect;
-    public on(evtId: "error", callback: (e: Error) => void): EventDisconnect;
+    public on(evtId: "defined" | "ready", callback: GenericFunction1<this>): GenericFunction0;
+    public on(evtId: "error", callback: (e: Error) => void): GenericFunction0;
     public on(evtId: any, callback: any) {
 
         let eventEmitter: events.EventEmitter | undefined;
