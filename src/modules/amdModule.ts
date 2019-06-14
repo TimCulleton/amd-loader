@@ -1,6 +1,7 @@
 
 import events from "events";
 import vm from "vm";
+import { RequireModule } from "../types/amdModuleTypes";
 import { IAmdModule } from "../types/amdModuleTypes";
 import { FactoryFn } from "../types/amdModuleTypes";
 import { GenericFunction0 } from "../types/commonTypes";
@@ -58,7 +59,7 @@ export function requireModule(moduleId: string): Promise<IAmdModule> {
 
         let amdModule = ModuleCache[moduleId];
         if (!amdModule) {
-            amdModule = new AmdModule(moduleId);
+            amdModule = new AmdModule(moduleId, requireModule);
             ModuleCache[moduleId] = amdModule;
         }
 
@@ -144,7 +145,7 @@ export function defineModule(moduleId: string, dependencies: string[], factory: 
 
     let amdModule = ModuleCache[moduleId];
     if (!amdModule) {
-        amdModule = new AmdModule(moduleId);
+        amdModule = new AmdModule(moduleId, requireModule);
         ModuleCache[moduleId] = amdModule;
         amdModule.path = ModuleGetter.getModulePath(moduleId);
     }
@@ -162,12 +163,13 @@ export class AmdModule implements IAmdModule {
     public factory: FactoryFn;
     public loaded: boolean;
     public exports: any;
+    public requireModule: RequireModule;
 
     private _event: events.EventEmitter;
     private _defined: boolean;
     private _moduleLoader: Promise<this> | undefined;
 
-    constructor(name: string) {
+    constructor(name: string, requireModule: RequireModule) {
         this.name = name;
         this.path = "";
         this.dependencies = [];
@@ -177,6 +179,7 @@ export class AmdModule implements IAmdModule {
         this._defined = false;
         this._event = new events.EventEmitter();
         this._moduleLoader = undefined;
+        this.requireModule = requireModule;
     }
 
     public on(evtId: "defined" | "ready", callback: GenericFunction1<this>): GenericFunction0;
