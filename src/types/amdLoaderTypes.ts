@@ -11,5 +11,7 @@ export interface IModuleAccessorConfig {
 
     getPathForModule(moduleId: string): Promise<string>;
 
+    getPathForModuleSync(moduleId: string): string;
+
     getContentForModule(moduleId: string, modulePath: string): Promise<string>;
 }
