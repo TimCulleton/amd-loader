@@ -6,6 +6,9 @@ node_modules/
 **/*.d.ts
 **/*.js.map
 
+# Ignore Jest Coverage Folder
+coverage/
+
 # Track Jest config
 !/jest.config.js
 
