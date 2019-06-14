@@ -17,10 +17,12 @@ export class ConfigWrapper<T extends object> {
      * Get the value currently assigned to the given property
      * @param {K extends keyof T} prop - property key to get the value for
      */
-    public getValue<K extends keyof T>(prop: K): T[K] | undefined {
+    public getValue<K extends keyof T>(prop: K): T[K] {
         if (this.config) {
             return this.config[prop];
         }
+
+        throw new Error(`Config has not been set, unable to get value for ${prop}`);
     }
 
     /**
@@ -53,6 +55,14 @@ export class ConfigWrapper<T extends object> {
     public updateValue(value: T): this;
 
     /**
+     * Update a sub property on the config object
+     * @param {K1} key1 - Initial Property to targer
+     * @param {K2} key2 - Sub Property to change
+     * @param {T[K1][K2]} value - Value to assign to sub property
+     */
+    public updateValue<K1 extends keyof T, K2 extends keyof T[K1]>(key1: K1, key2: K2, value: T[K1][K2]): this;
+
+    /**
      * Update value implementation.
      * This will parse the arguments to determine the update 'mode'
      * If arg[0] is a string it assumed that we are updating a single key/value
@@ -80,6 +90,11 @@ export class ConfigWrapper<T extends object> {
                 return this;
             }
 
+            if (args.length > 2) {
+                this.config[args[0]][args[1]] = args[2];
+                return this;
+            }
+
             // update tuple mode
             let updatePairs: Array<[any, any]> = [];
 
@@ -99,6 +114,11 @@ export class ConfigWrapper<T extends object> {
             throw new Error(`Can not update config as it is undefined`);
         }
 
+        return this;
+    }
+
+    public clearConfig(): this {
+        this.config = undefined;
         return this;
     }
 }
