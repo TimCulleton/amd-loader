@@ -1,13 +1,12 @@
 import { EventEmitter } from "events";
 import { IAmdModuleConfig } from "../types/amdModuleTypes";
-import { IAmdModuleV2 } from "../types/amdModuleTypes";
 import { IAmdModule } from "../types/amdModuleTypes";
 import { FactoryFn } from "../types/amdModuleTypes";
 import { RequireModule } from "../types/amdModuleTypes";
 import { GenericFunction1 } from "../types/commonTypes";
 import { GenericFunction0 } from "../types/commonTypes";
 
-export class AmdModuleV2 implements IAmdModuleV2 {
+export class AmdModule implements IAmdModule {
     public name: string;
     public path: string;
     public dependencies: string[];

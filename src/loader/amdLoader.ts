@@ -1,5 +1,5 @@
 import vm from "vm";
-import { AmdModuleV2 } from "../modules/amdModuleV2";
+import { AmdModule } from "../modules/amdModule";
 import { IAmdModule } from "../types/amdModuleTypes";
 import { FactoryFn } from "../types/amdModuleTypes";
 import { AmdLoaderConfig } from "./amdLoaderConfig";
@@ -145,7 +145,7 @@ export function defineModule(moduleId: string, dependencies: string[], factory: 
  * @param {string} moduleId - id/name of the module
  */
 export function createModule(moduleId: string): IAmdModule {
-    return new AmdModuleV2({
+    return new AmdModule({
         name: moduleId,
         requireModule,
         getModuleFromCache,
