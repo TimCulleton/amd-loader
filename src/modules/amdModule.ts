@@ -1,160 +1,10 @@
-
-import events from "events";
-import vm from "vm";
-import { RequireModule } from "../types/amdModuleTypes";
+import { EventEmitter } from "events";
+import { IAmdModuleConfig } from "../types/amdModuleTypes";
 import { IAmdModule } from "../types/amdModuleTypes";
 import { FactoryFn } from "../types/amdModuleTypes";
-import { GenericFunction0 } from "../types/commonTypes";
+import { RequireModule } from "../types/amdModuleTypes";
 import { GenericFunction1 } from "../types/commonTypes";
-
-/**
- * Helper object to assist with 
- * resolving the module path and getting the module contents
- */
-export interface IModuleGetter {
-
-    /**
-     * For the supplied moduleId get the path to the module resource.
-     * This could be a single module file or a concatenated module
-     */
-    getModulePath: (moduleName: string) => string;
-
-    /**
-     * For the supplied the module path get the module contents.
-     */
-    getModuleContents: (modulePath: string) => Promise<string>;
-}
-
-/**
- * Global Module Cache that keeps track of all the current modules
- */
-export let ModuleCache: {[key: string]: IAmdModule} = {};
-
-export function clearModuleCache(): {[key: string]: IAmdModule} {
-    ModuleCache = {};
-    return ModuleCache;
-}
-
-let ModuleGetter: IModuleGetter = {
-    getModulePath: (moduleName: string) => moduleName,
-
-    getModuleContents: (modulePath: string) => {
-        return Promise.resolve(`throw new error('default reader');`);
-    },
-};
-
-/**
- * AMD version of require.
- * This will attempt to find the module in the cache and return that, if it
- * has been loaded.
- *
- * If unable to find the module or it has not been loaded then it will
- * be loaded. Causing the module to be loaded as well as its dependencies.
- * Where upon the module emitting the 'ready' event it will be resolved in
- * promise.
- * @param {string} moduleId - AMD Module to be loaded 
- */
-export function requireModule(moduleId: string): Promise<IAmdModule> {
-    return new Promise<IAmdModule>((resolve, reject) => {
-
-        let amdModule = ModuleCache[moduleId];
-        if (!amdModule) {
-            amdModule = new AmdModule(moduleId, requireModule);
-            ModuleCache[moduleId] = amdModule;
-        }
-
-        const disconnectOnReady = amdModule.on("ready", (loadedModule) => {
-            disconnectOnReady();
-            resolve(loadedModule);
-        });
-
-        const disconnectOnError = amdModule.on("error", (e) => {
-            disconnectOnError();
-            reject(e);
-        });
-
-        if (!amdModule.loaded) {
-            loadModule(amdModule);
-        }
-    });
-}
-
-export function updateModuleGetter<K extends keyof IModuleGetter>(key: K, value: IModuleGetter[K]): void {
-    ModuleGetter[key] = value;
-}
-
-/**
- * Load a AMD module by first
- * getting the contents of file and wrapping the contents
- * in a module function to inject the 'define' function.
- *
- * This will cause the AMD module to then invoke the define function
- * completing the initial registration. Once the module has been 'defined'
- *
- * The module will then be loaded, causing any of its dependencies to be loaded.
- * @param {IAmdModule} amdModule - AMD Module that is to be loaded.
- * This can be created via the require or during a concatenated module load
- * 
- */
-export async function loadModule(amdModule: IAmdModule): Promise<void> {
-    const modulePath = ModuleGetter.getModulePath(amdModule.name);
-    amdModule.path = modulePath;
-
-    const moduleContents = await ModuleGetter.getModuleContents(modulePath);
-
-    // Kick off the Module Load - 
-    const disconnectModuleDefined = amdModule.on("defined", (definedModule) => {
-        disconnectModuleDefined();
-        definedModule.load();
-    });
-
-    // wrap contents
-    const wrappedContents =
-    `(function (andModule, modulePath) {
-        
-        if (typeof define === "undefined") {
-            var define = andModule.defineModule;
-        }
-
-        ${moduleContents}
-    })`;
-
-    // Compile the code
-    const compiledWrapper = vm.runInThisContext(wrappedContents, {
-        displayErrors: true,
-    });
-
-    // Execute the code, sending in 'this' as dependency to wrapper function
-    compiledWrapper.apply(global, [exports]);
-}
-
-/**
- * Define a AMD Module.
- * This registers the module Id with its dependencies and factory method
- * enabling the full 'load' of the module to be performed later.
- * 
- * Note - this function will be invoked during a module 'load' IE
- * when require loads and executes the file.
- * @param {string} moduleId - Module Id that this definition will be registered as
- * @param {string[]} dependencies - Array of module ids that are required to be loaded and 
- * passed into the factory function
- * @param {function} factory - Factory function that takes dependencies to execute the actual
- * 'module' code. The result of which will be stored on the modules exports. 
- */
-export function defineModule(moduleId: string, dependencies: string[], factory: FactoryFn) {
-
-    let amdModule = ModuleCache[moduleId];
-    if (!amdModule) {
-        amdModule = new AmdModule(moduleId, requireModule);
-        ModuleCache[moduleId] = amdModule;
-        amdModule.path = ModuleGetter.getModulePath(moduleId);
-    }
-
-    amdModule.dependencies = dependencies;
-    amdModule.factory = factory;
-
-    amdModule.emit("defined");
-}
+import { GenericFunction0 } from "../types/commonTypes";
 
 export class AmdModule implements IAmdModule {
     public name: string;
@@ -165,28 +15,43 @@ export class AmdModule implements IAmdModule {
     public exports: any;
     public requireModule: RequireModule;
 
-    private _event: events.EventEmitter;
+    /**
+     * Event Emitter
+     */
+    private _event: EventEmitter;
+
+    /**
+     * Has this module been defined
+     */
     private _defined: boolean;
+
     private _moduleLoader: Promise<this> | undefined;
 
-    constructor(name: string, requireModule: RequireModule) {
-        this.name = name;
-        this.path = "";
-        this.dependencies = [];
-        this.factory = () => new Error(`no factory`);
-        this.loaded = false;
+    private _getModuleFromCache: (id: string) => IAmdModule | undefined;
 
+    constructor(config: IAmdModuleConfig) {
+        this._event = new EventEmitter();
         this._defined = false;
-        this._event = new events.EventEmitter();
         this._moduleLoader = undefined;
-        this.requireModule = requireModule;
+
+        this.name = config.name;
+        this.path = config.path || "";
+        this.dependencies = config.dependencies || [];
+        this.factory = config.factory || (() => {
+            const error = new Error(`Factory has not been supplied`);
+            this._emitError(error);
+            throw(error);
+        });
+        this.loaded = !!config.loaded;
+        this.requireModule = config.requireModule;
+        this._getModuleFromCache = config.getModuleFromCache;
     }
 
     public on(evtId: "defined" | "ready", callback: GenericFunction1<this>): GenericFunction0;
     public on(evtId: "error", callback: (e: Error) => void): GenericFunction0;
     public on(evtId: any, callback: any) {
 
-        let eventEmitter: events.EventEmitter | undefined;
+        let eventEmitter: EventEmitter | undefined;
         if (evtId === "defined" && !this._defined) {
             eventEmitter = this._event.on("defined", callback);
         } else if (evtId === "ready" && !this.loaded) {
@@ -203,7 +68,7 @@ export class AmdModule implements IAmdModule {
             });
         }
 
-        return eventEmitter ? () => { this._event.off(evtId, callback); } : () => {};
+        return eventEmitter ? () => { this._event.off(evtId, callback); } : () => { };
     }
 
     public emit(evtId: "defined" | "ready"): boolean {
@@ -221,8 +86,7 @@ export class AmdModule implements IAmdModule {
     }
 
     public async load(): Promise<this> {
-        // cache the promise to ensure that the loading only occurs
-        // once
+        // cache the promise to ensure that the loading only occurs once
         if (!this._moduleLoader) {
             this._moduleLoader = this._loadModule();
         }
@@ -235,16 +99,40 @@ export class AmdModule implements IAmdModule {
             throw new Error(`AMD Module ${this.name} has not been defined`);
         } else {
 
-            const dependenciesToLoad = this.dependencies
-            .filter(id => !ModuleCache[id] || !ModuleCache[id].loaded)
-            .map(depModule => requireModule(depModule));
+            // const moduleGetter = this.config.getValue("getModuleFromCache");
+            const dependenciesToLoad = (this.dependencies || [])
+                .filter(id => {
+                    const cachedModule = this._getModuleFromCache(id);
+                    return !cachedModule || !cachedModule.loaded;
+                })
+                .map(moduleIdToLoad => this.requireModule(moduleIdToLoad));
 
             await Promise.all(dependenciesToLoad);
-            const dependencies = this.dependencies.map(id => ModuleCache[id].exports);
+
+            const dependencies = (this.dependencies || []).map(id => {
+                const loadedModule = this._getModuleFromCache(id);
+                if (!loadedModule) {
+                    const error = new Error(`Module Dependency ${id} was not loaded`);
+                    this._emitError(error);
+                    throw error;
+                } else {
+                    return loadedModule.exports;
+                }
+            });
+
+            if (!this.factory) {
+                const error = new Error(`Module Factory is not defined`);
+                this._emitError(error);
+                throw error;
+            }
 
             this.exports = this.factory.apply(global, dependencies);
             this.emit("ready");
             return this;
         }
+    }
+
+    private _emitError(e: Error): void {
+        this._event.emit("error", e);
     }
 }
