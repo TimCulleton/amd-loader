@@ -41,6 +41,13 @@ describe(`AMD Module V2 Tests`, () => {
         });
     });
 
+    it(`Test that test file exists`, async () => {
+        const moduleName = `simpleModules/moduleA`;
+        const filePath = path.resolve(testDir, moduleName + ".js");
+        const exists = fs.existsSync(filePath);
+        expect(exists).toBeTruthy();
+    });
+
     it(`Verify that normal Define Registers a module`, () => {
         const moduleName = `simpleModules/moduleA`;
         expect(amdLoader.getModuleFromCache(moduleName)).toBeFalsy();
