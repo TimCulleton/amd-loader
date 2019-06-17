@@ -96,10 +96,20 @@ export class AmdModule implements IAmdModule {
 
     private async _loadModule(): Promise<this> {
         if (!this._defined) {
-            throw new Error(`AMD Module ${this.name} has not been defined`);
+            const error = new Error(`AMD Module ${this.name} has not been defined`);
+            this._emitError(error);
+            throw error;
         } else {
 
-            // const moduleGetter = this.config.getValue("getModuleFromCache");
+            // If we have no factory then this module is busted, bail out
+            if (!this.factory) {
+                const error = new Error(`Module Factory is not defined`);
+                this._emitError(error);
+                throw error;
+            }
+
+            // Get all the dependices that need to be loaded
+            // IE modules that are not currently stored in the cache
             const dependenciesToLoad = (this.dependencies || [])
                 .filter(id => {
                     const cachedModule = this._getModuleFromCache(id);
@@ -109,9 +119,10 @@ export class AmdModule implements IAmdModule {
 
             await Promise.all(dependenciesToLoad);
 
+            // If any dependent modules are not loaded then we can not proceed with the load
             const dependencies = (this.dependencies || []).map(id => {
                 const loadedModule = this._getModuleFromCache(id);
-                if (!loadedModule) {
+                if (!loadedModule || !loadedModule.loaded) {
                     const error = new Error(`Module Dependency ${id} was not loaded`);
                     this._emitError(error);
                     throw error;
@@ -120,12 +131,7 @@ export class AmdModule implements IAmdModule {
                 }
             });
 
-            if (!this.factory) {
-                const error = new Error(`Module Factory is not defined`);
-                this._emitError(error);
-                throw error;
-            }
-
+            // Call the factory suppliying all the dependencies to the function
             this.exports = this.factory.apply(global, dependencies);
             this.emit("ready");
             return this;
