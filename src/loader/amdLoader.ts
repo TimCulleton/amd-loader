@@ -2,7 +2,11 @@ import vm from "vm";
 import { AmdModule } from "../modules/amdModule";
 import { IAmdModule } from "../types/amdModuleTypes";
 import { FactoryFn } from "../types/amdModuleTypes";
+import { GenericFunction1 } from "../types/commonTypes";
+import { GenericFunction0 } from "../types/commonTypes";
 import { AmdLoaderConfig } from "./amdLoaderConfig";
+
+export type AmdModuleCallback = GenericFunction1<IAmdModule>;
 
 /**
  * Cache of currently Defined/Loaded AMD Modules
@@ -39,17 +43,28 @@ export function requireModule(moduleId: string): Promise<IAmdModule> {
             return amdModule;
         }
 
-        const disconnectOnReady = amdModule.on("ready", (loadedModule) => {
+        // On Ready
+        let disconnectOnReady: GenericFunction0;
+        const onReady: AmdModuleCallback = (loadedModule) => {
             disconnectOnReady();
             resolve(loadedModule);
-        });
+        };
+        disconnectOnReady = amdModule.on("ready", onReady);
 
-        const disconnectOnError = amdModule.on("error", (e) => {
+        // On Error
+        let disconnectOnError: GenericFunction0;
+        const onError: GenericFunction1<Error> = (e) => {
             disconnectOnError();
             reject(e);
-        });
+        };
+        disconnectOnError = amdModule.on("error", onError);
 
-        if (!amdModule.loaded) {
+        // If Module has been defined but not loaded
+        // Call its 'load' method
+        if (!amdModule.loaded && amdModule.defined) {
+            amdModule.load().then(onReady, onError);
+        // Module has not been loaded, load and process its file
+        } else if (!amdModule.loaded) {
             loadModule(amdModule);
         }
     });
@@ -74,7 +89,7 @@ export async function loadModule(amdModule: IAmdModule): Promise<void> {
 
     const moduleContents = await loaderConfig.moduleAccessor.getContentForModule(amdModule.name, modulePath);
 
-    // Kick off the Module Load - 
+    // Kick off the Module Load -
     const disconnectModuleDefined = amdModule.on("defined", (definedModule) => {
         disconnectModuleDefined();
         definedModule.load();

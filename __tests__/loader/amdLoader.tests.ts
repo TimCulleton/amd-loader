@@ -85,6 +85,62 @@ describe(`AMD Loader Tests`, () => {
         expect(moduleA.exports.moduleName).toBe("moduleA");
     });
 
+    /**
+     * Require a loaded module should just return the loaded module
+     */
+    it(`Get a Loaded Module`, async () => {
+        const moduleName = `simpleModules/moduleA`;
+        const expectedModulePath = path.resolve(testDir, moduleName + ".js");
+
+        const getModulePath = (moduleId: string) => {
+            return path.resolve(testDir, moduleId + ".js");
+        };
+
+        amdLoader.loaderConfig.updateModuleAccessor("getPathForModule", moduleId => {
+            return Promise.resolve(getModulePath(moduleId));
+        });
+
+        amdLoader.loaderConfig.updateModuleAccessor("getPathForModuleSync", getModulePath);
+
+        amdLoader.loaderConfig.updateModuleAccessor("getContentForModule", (moduleId, modulePath) => {
+            return readFile(modulePath, "utf8");
+        });
+
+        const moduleA = await amdLoader.requireModule(moduleName);
+        expect(moduleA).toBeTruthy();
+        expect(moduleA.path).toBe(expectedModulePath);
+        expect(moduleA.exports.moduleName).toBe("moduleA");
+        const spyLoadModule = spyOn(amdLoader, "loadModule");
+
+        const duplicateModule = await amdLoader.requireModule(moduleName);
+        expect(duplicateModule).toBeTruthy();
+        expect(spyLoadModule).not.toBeCalled();
+        expect(duplicateModule.path).toBe(expectedModulePath);
+        expect(duplicateModule.exports.moduleName).toBe("moduleA");
+    });
+
+    it(`Error while loading a module`, async (done) => {
+        const moduleId = `testModule/badModule`;
+
+        amdLoader.loaderConfig.updateModuleAccessor("getPathForModuleSync", moduleId => {
+            return moduleId;
+        });
+
+        amdLoader.defineModule(moduleId, [], () => {});
+        const testModule = amdLoader.getModuleFromCache(moduleId) as IAmdModule;
+        expect(testModule).toBeTruthy();
+
+        testModule.factory = null as any;
+        // now try to load it
+        try {
+            await amdLoader.requireModule(moduleId);
+            expect("").toBe("should have failed");
+        } catch (e) {
+            expect(e.message).toBe(`Module Factory is not defined for ${moduleId}`);
+            done();
+        }
+    });
+
     it(`Load Module that depends on another - 1 dependency`, async () => {
         const moduleName = `simpleModules/moduleB`;
         const expectedModulePath = path.resolve(testDir, moduleName + ".js");
