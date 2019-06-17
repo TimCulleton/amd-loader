@@ -9,6 +9,7 @@ export interface IAmdModuleConfig {
     dependencies?: string[];
     factory?: FactoryFn;
     loaded?: boolean;
+    defined?: boolean;
     exports?: any;
 
     requireModule: RequireModule;
@@ -29,6 +30,7 @@ export interface IAmdModule {
     dependencies: string[];
     factory: FactoryFn;
     loaded: boolean;
+    defined: boolean;
     exports: any;
     requireModule: RequireModule;
 

@@ -164,7 +164,7 @@ describe(`AMD Module V2 Tests`, () => {
             throw new Error(`Module should not have loaded`);
         } catch (e) {
             expect(errorEmitted).toBeTruthy();
-            expect(e.message).toBe(`Module Factory is not defined`);
+            expect(e.message).toBe(`Module Factory is not defined for ${config.name}`);
         }
     });
 

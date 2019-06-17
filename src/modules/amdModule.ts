@@ -16,14 +16,14 @@ export class AmdModule implements IAmdModule {
     public requireModule: RequireModule;
 
     /**
+     * Has this module been defined
+     */
+    public defined: boolean;
+
+    /**
      * Event Emitter
      */
     private _event: EventEmitter;
-
-    /**
-     * Has this module been defined
-     */
-    private _defined: boolean;
 
     private _moduleLoader: Promise<this> | undefined;
 
@@ -31,7 +31,7 @@ export class AmdModule implements IAmdModule {
 
     constructor(config: IAmdModuleConfig) {
         this._event = new EventEmitter();
-        this._defined = false;
+        this.defined = !!config.defined;
         this._moduleLoader = undefined;
 
         this.name = config.name;
@@ -52,7 +52,7 @@ export class AmdModule implements IAmdModule {
     public on(evtId: any, callback: any) {
 
         let eventEmitter: EventEmitter | undefined;
-        if (evtId === "defined" && !this._defined) {
+        if (evtId === "defined" && !this.defined) {
             eventEmitter = this._event.on("defined", callback);
         } else if (evtId === "ready" && !this.loaded) {
             eventEmitter = this._event.on("ready", callback);
@@ -75,7 +75,7 @@ export class AmdModule implements IAmdModule {
 
         let retValue: boolean = false;
         if (evtId === "defined") {
-            this._defined = true;
+            this.defined = true;
             retValue = this._event.emit(evtId, this);
         } else if (evtId === "ready") {
             this.loaded = true;
@@ -95,7 +95,7 @@ export class AmdModule implements IAmdModule {
     }
 
     private async _loadModule(): Promise<this> {
-        if (!this._defined) {
+        if (!this.defined) {
             const error = new Error(`AMD Module ${this.name} has not been defined`);
             this._emitError(error);
             throw error;
@@ -103,7 +103,7 @@ export class AmdModule implements IAmdModule {
 
             // If we have no factory then this module is busted, bail out
             if (!this.factory) {
-                const error = new Error(`Module Factory is not defined`);
+                const error = new Error(`Module Factory is not defined for ${this.name}`);
                 this._emitError(error);
                 throw error;
             }
