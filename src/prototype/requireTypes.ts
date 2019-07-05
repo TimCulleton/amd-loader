@@ -45,6 +45,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 // 	export = mod;
 // }
 
+// tslint:disable: interface-name
+// tslint:disable: ban-types
+// tslint:disable: unified-signatures
+
 interface RequireError extends Error {
 
     /**
@@ -327,7 +331,6 @@ interface RequireConfig {
 
 // }
 
-
 interface RequireMap {
 
     /**
@@ -535,7 +538,7 @@ interface RequireDefine {
      * @type {Object}
      * @memberof RequireDefine
      */
-    amd: Object;
+    amd: object;
 }
 
 // Ambient declarations for 'require' and 'define'
