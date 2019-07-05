@@ -298,4 +298,5 @@ describe(`AMD Module V2 Tests`, () => {
             expect(e.message).toBe(`Module Dependency testModule/moduleB was not loaded`);
         }
     });
+
 });

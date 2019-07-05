@@ -85,6 +85,27 @@ describe(`AMD Loader Tests`, () => {
         expect(moduleA.exports.moduleName).toBe("moduleA");
     });
 
+    it(`Get a typed module`, async () => {
+        const moduleName = `simpleModules/moduleA`;
+
+        const getModulePath = (moduleId: string) => {
+            return path.resolve(testDir, moduleId + ".js");
+        };
+
+        amdLoader.loaderConfig.updateModuleAccessor("getPathForModule", moduleId => {
+            return Promise.resolve(getModulePath(moduleId));
+        });
+
+        amdLoader.loaderConfig.updateModuleAccessor("getPathForModuleSync", getModulePath);
+
+        amdLoader.loaderConfig.updateModuleAccessor("getContentForModule", (moduleId, modulePath) => {
+            return readFile(modulePath, "utf8");
+        });
+
+        const moduleA = await amdLoader.requireLoadedModule<typeof import("simpleModules/moduleA")>(moduleName);
+        expect(moduleA.moduleName).toBe("moduleA");
+    });
+
     /**
      * Require a loaded module should just return the loaded module
      */
@@ -126,7 +147,7 @@ describe(`AMD Loader Tests`, () => {
             return moduleId;
         });
 
-        amdLoader.defineModule(moduleId, [], () => {});
+        amdLoader.defineModule(moduleId, [], () => { });
         const testModule = amdLoader.getModuleFromCache(moduleId) as IAmdModule;
         expect(testModule).toBeTruthy();
 
