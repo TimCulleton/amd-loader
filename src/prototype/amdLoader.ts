@@ -27,6 +27,8 @@ export interface IModuleLoaderConfigOptions {
      * @memberof IModuleLoaderConfigOptions
      */
     basePath?: string;
+
+    getModulePath?: (moduleId: string) => Promise<string>;
 }
 
 /**
@@ -106,7 +108,7 @@ export interface IModuleLoader {
      * @returns {Promise<string>}
      * @memberof IModuleLoader
      */
-    getModuleContent(moduleId: string): Promise<string>;
+    getModuleContent(moduleId: string, fileExtension?: string): Promise<string>;
 }
 
 export interface IProcessModuleContentConfig {
@@ -114,9 +116,17 @@ export interface IProcessModuleContentConfig {
     moduleContent: string;
 }
 
+export interface IModulePluginConfig {
+    getModuleLoader(loaderId: string): IModuleLoader;
+}
+
 export interface IModuleLoaderPlugin {
 
+    config: IModulePluginConfig;
+
     prefix: string;
+
+    loadModule(moduleId: string): Promise<any>;
 
     canProcessModule(moduleId: string): boolean;
 
