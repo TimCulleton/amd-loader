@@ -15,26 +15,6 @@ describe(`Text Plugin Tests`, () => {
         });
     });
 
-    it(`Normalize Text ModuleID - prefix wrapped in !`, () => {
-        const moduleId = `!text!simpleModules/textData`;
-        const moduleNameData = textPlugin.normalizeModuleId(moduleId);
-        expect(moduleNameData).toBeTruthy();
-        if (moduleNameData) {
-            expect(moduleNameData.prefix).toBe("text");
-            expect(moduleNameData.moduleId).toBe("simpleModules/textData");
-        }
-    });
-
-    it(`Normalize text ModuleID - not wrapped in !`, () => {
-        const moduleId = `text!simpleModules/textData`;
-        const moduleNameData = textPlugin.normalizeModuleId(moduleId);
-        expect(moduleNameData).toBeTruthy();
-        if (moduleNameData) {
-            expect(moduleNameData.prefix).toBe("text");
-            expect(moduleNameData.moduleId).toBe("simpleModules/textData");
-        }
-    });
-
     it(`Can Process Module Valid - prefix wrapped`, () => {
         const moduleId = `!text!simpleModules/textData`;
         expect(textPlugin.canProcessModule(moduleId)).toBeTruthy();

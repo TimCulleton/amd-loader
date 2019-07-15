@@ -1,3 +1,4 @@
+import modulePathUtils = require("../../../src/prototype/utils/modulePathUtils");
 import { IModuleLoaderPlugin } from "../amdLoader";
 import { IModulePluginConfig } from "../amdLoader";
 import { IProcessModuleContentConfig } from "../amdLoader";
@@ -13,10 +14,11 @@ export class TextPlugin implements IModuleLoaderPlugin {
 
     public async loadModule(moduleId: string): Promise<any> {
         const moduleLoader = this.config.getModuleLoader("fileLoader");
-        const moduleNameParts = this.normalizeModuleId(moduleId);
+        const moduleNameParts = modulePathUtils.getPrefixDataForModule(moduleId);
         if (moduleNameParts) {
             const modulePath = await moduleLoader.getModulePath(moduleNameParts.moduleId);
-            const content = await moduleLoader.getModuleContent(modulePath);
+            const fileExension = modulePathUtils.getFileExtensionForModule(moduleId) || "";
+            const content = await moduleLoader.getModuleContent(modulePath, fileExension);
             return this.processModuleContent({
                 moduleId,
                 moduleContent: content,
@@ -27,23 +29,11 @@ export class TextPlugin implements IModuleLoaderPlugin {
     }
 
     public canProcessModule(moduleId: string): boolean {
-        const nameData = this.normalizeModuleId(moduleId);
+        const nameData = modulePathUtils.getPrefixDataForModule(moduleId);
         if (nameData) {
             return nameData.prefix === "text";
         } else {
             return false;
-        }
-    }
-
-    public normalizeModuleId(moduleId: string): {prefix: string, moduleId: string} | null {
-        const matches = moduleId.match(/([^!].+)!(.+)/);
-        if (matches) {
-            return {
-                prefix: matches[1],
-                moduleId: matches[2],
-            };
-        } else {
-            return matches;
         }
     }
 

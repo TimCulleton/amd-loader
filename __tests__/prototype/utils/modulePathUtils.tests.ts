@@ -30,4 +30,41 @@ describe(`ModulePathUtil Tests`, () => {
 
         expect(modulePathUtils.getModulePath(moduleId, "XZ")).toBe(modulePath);
     });
+
+    it(`Normalize Text ModuleID - prefix wrapped in !`, () => {
+        const moduleId = `!text!simpleModules/textData`;
+        const moduleNameData = modulePathUtils.getPrefixDataForModule(moduleId);
+        expect(moduleNameData).toBeTruthy();
+        if (moduleNameData) {
+            expect(moduleNameData.prefix).toBe("text");
+            expect(moduleNameData.moduleId).toBe("simpleModules/textData");
+        }
+    });
+
+    it(`Normalize text ModuleID - not wrapped in !`, () => {
+        const moduleId = `text!simpleModules/textData`;
+        const moduleNameData = modulePathUtils.getPrefixDataForModule(moduleId);
+        expect(moduleNameData).toBeTruthy();
+        if (moduleNameData) {
+            expect(moduleNameData.prefix).toBe("text");
+            expect(moduleNameData.moduleId).toBe("simpleModules/textData");
+        }
+    });
+
+    it(`Get File Extension from module`, () => {
+        const moduleId = `XZ/testModule/test/test1.csv`;
+        const fileExtension = modulePathUtils.getFileExtensionForModule(moduleId);
+        expect(fileExtension).toBe("csv");
+    });
+
+    it(`Get File Extension from module with prefix`, () => {
+        const moduleId = `XZ!testModule/test/test1.csv`;
+        const fileExtension = modulePathUtils.getFileExtensionForModule(moduleId);
+        expect(fileExtension).toBe("csv");
+    });
+
+    it(`Get file Extension from module with not file extension`, () => {
+        const moduleId = `XZ/testModule/test/test1`;
+        expect(modulePathUtils.getFileExtensionForModule(moduleId)).toBeFalsy();
+    });
 });

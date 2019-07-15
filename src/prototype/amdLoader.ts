@@ -28,7 +28,7 @@ export interface IModuleLoaderConfigOptions {
      */
     basePath?: string;
 
-    getModulePath?: (moduleId: string) => Promise<string>;
+    getModulePath?: (moduleId: string, fileExtension?: string) => Promise<string>;
 }
 
 /**
@@ -96,10 +96,11 @@ export interface IModuleLoader {
      *
      * For the supplied moduleId get the full path to retrieve the module
      * @param {string} moduleId - module to get path for
+     * @param {string} [fileExtension]
      * @returns {Promise<string>}
      * @memberof IModuleLoader
      */
-    getModulePath(moduleId: string): Promise<string>;
+    getModulePath(moduleId: string, fileExtension?: string): Promise<string>;
 
     /**
      *

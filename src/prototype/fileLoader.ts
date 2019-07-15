@@ -9,7 +9,7 @@ const asyncFileRead = utils.promisify(fs.readFile);
 const asyncFileExists = utils.promisify(fs.exists);
 const asyncDirRead = utils.promisify(fs.readdir);
 
-export type GetModulePath = (moduleId: string) => Promise<string>;
+export type GetModulePath = (moduleId: string, fileExtension?: string) => Promise<string>;
 
 export class FileLoader implements IModuleLoader {
     public config: IModuleLoaderConfig;
@@ -47,7 +47,7 @@ export class FileLoader implements IModuleLoader {
     }
 
     public async getModuleContent(moduleId: string, fileExtension?: string): Promise<string> {
-        const modulePath = await this.getModulePath(moduleId);
+        const modulePath = await this.getModulePath(moduleId, fileExtension);
         const fileExists = await asyncFileExists(modulePath);
 
         if (fileExists) {
@@ -57,8 +57,7 @@ export class FileLoader implements IModuleLoader {
         }
     }
 
-    protected async _getModulePath(moduleId: string): Promise<string> {
-        const modulePath = path.resolve(this.config.basePath, moduleId + ".js");
-        return modulePath;
+    protected async _getModulePath(moduleId: string, fileExtension = "js"): Promise<string> {
+        return path.resolve(this.config.basePath, moduleId + "." + fileExtension);
     }
 }

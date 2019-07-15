@@ -57,3 +57,57 @@ export function getModulePath(moduleId: string, prefix?: string): string {
 
     return modulePath;
 }
+
+export interface IModulePrefixData {
+
+    /**
+     *
+     * Plugin prefix id
+     * @type {string}
+     * @memberof IModulePrefixData
+     */
+    prefix: string;
+
+    /**
+     *
+     * Normalized module Id
+     * @type {string}
+     * @memberof IModulePrefixData
+     */
+    moduleId: string;
+}
+
+/**
+ *
+ *
+ * @export
+ * @param {string} moduleId
+ * @returns {(IModulePrefixData | null)}
+ */
+export function getPrefixDataForModule(moduleId: string): IModulePrefixData | null {
+    const matches = moduleId.match(/([^!].+)!(.+)/);
+    if (matches) {
+        return {
+            prefix: matches[1],
+            moduleId: matches[2],
+        };
+    } else {
+        return matches;
+    }
+}
+
+/**
+ *
+ *
+ * @export
+ * @param {string} moduleId
+ * @returns {(string | null)}
+ */
+export function getFileExtensionForModule(moduleId: string): string | null {
+    const matches = moduleId.match(/\.(.+)$/);
+    if (matches) {
+        return matches[1];
+    } else {
+        return matches;
+    }
+}
