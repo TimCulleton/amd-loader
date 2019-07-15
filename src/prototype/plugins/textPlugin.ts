@@ -16,9 +16,7 @@ export class TextPlugin implements IModuleLoaderPlugin {
         const moduleLoader = this.config.getModuleLoader("fileLoader");
         const moduleNameParts = modulePathUtils.getPrefixDataForModule(moduleId);
         if (moduleNameParts) {
-            const modulePath = await moduleLoader.getModulePath(moduleNameParts.moduleId);
-            const fileExension = modulePathUtils.getFileExtensionForModule(moduleId) || "";
-            const content = await moduleLoader.getModuleContent(modulePath, fileExension);
+            const content = await moduleLoader.getModuleContent({moduleId: moduleNameParts.moduleId});
             return this.processModuleContent({
                 moduleId,
                 moduleContent: content,
