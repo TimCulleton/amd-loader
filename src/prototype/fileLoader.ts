@@ -4,6 +4,7 @@ import utils = require("util");
 import { IModuleLoader } from "./amdLoader";
 import { IModuleLoaderConfig } from "./amdLoader";
 import { IModuleLoaderConfigOptions } from "./amdLoader";
+import { IGetModuleContentConfig } from "./amdLoader";
 
 const asyncFileRead = utils.promisify(fs.readFile);
 const asyncFileExists = utils.promisify(fs.exists);
@@ -46,18 +47,25 @@ export class FileLoader implements IModuleLoader {
         return true;
     }
 
-    public async getModuleContent(moduleId: string, fileExtension?: string): Promise<string> {
-        const modulePath = await this.getModulePath(moduleId, fileExtension);
+    public async getModuleContent(config: IGetModuleContentConfig): Promise<string> {
+        const modulePath = config.modulePath
+            ? config.modulePath
+            : await this.getModulePath(config.moduleId, config.fileExtension);
+
         const fileExists = await asyncFileExists(modulePath);
 
         if (fileExists) {
             return asyncFileRead(modulePath, "utf8");
         } else {
-            throw new Error(`Unable to find file for module: ${moduleId} path: ${modulePath}`);
+            throw new Error(`Unable to find file for module: ${config.moduleId} path: ${modulePath}`);
         }
     }
 
-    protected async _getModulePath(moduleId: string, fileExtension = "js"): Promise<string> {
-        return path.resolve(this.config.basePath, moduleId + "." + fileExtension);
+    protected async _getModulePath(moduleId: string, fileExtension?: string): Promise<string> {
+        const fileName = fileExtension
+            ? `${moduleId}.${fileExtension}`
+            : moduleId;
+
+        return path.resolve(this.config.basePath, fileName);
     }
 }

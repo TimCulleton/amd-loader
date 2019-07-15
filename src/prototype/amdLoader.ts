@@ -105,11 +105,46 @@ export interface IModuleLoader {
     /**
      *
      * For the supplied module get the content for the module for the file
-     * @param {string} moduleId
+     * @param {IGetModuleContentConfig} config
      * @returns {Promise<string>}
      * @memberof IModuleLoader
      */
-    getModuleContent(moduleId: string, fileExtension?: string): Promise<string>;
+    getModuleContent(config: IGetModuleContentConfig): Promise<string>;
+}
+
+/**
+ *
+ * Configuration object allowing properties to be supplied to the
+ * 'getModuleContent' function.
+ * @export
+ * @interface IGetModuleContentConfig
+ */
+export interface IGetModuleContentConfig {
+    /**
+     *
+     * Id of the module that is to be loaded
+     * @type {string}
+     * @memberof IGetModuleContentConfig
+     */
+    moduleId: string;
+
+    /**
+     *
+     * Optional property that will set the file reader to search for a
+     * file name with specified extension
+     * @type {string}
+     * @memberof IGetModuleContentConfig
+     */
+    fileExtension?: string;
+
+    /**
+     *
+     * Optional property that allows for a full path to be set
+     * bypassing the internal 'getModulePath'
+     * @type {string}
+     * @memberof IGetModuleContentConfig
+     */
+    modulePath?: string;
 }
 
 export interface IProcessModuleContentConfig {

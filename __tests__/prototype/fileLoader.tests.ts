@@ -27,7 +27,7 @@ describe(`FileLoader Tests`, () => {
         const moduleId = `simpleModules/moduleA`;
         const expectedPath = path.resolve(testDir, moduleId + ".js");
 
-        const actualPath = await fileLoader.getModulePath(moduleId);
+        const actualPath = await fileLoader.getModulePath(moduleId, "js");
         expect(actualPath).toBe(expectedPath);
     });
 
@@ -35,13 +35,21 @@ describe(`FileLoader Tests`, () => {
         const moduleId = `simpleModules/moduleB`;
         const expectedPath = path.resolve(testDir, moduleId + ".js");
 
-        const actualPath = await fileLoader.getModulePath(moduleId);
+        const actualPath = await fileLoader.getModulePath(moduleId, "js");
         expect(actualPath).toBe(expectedPath);
     });
 
     it(`Get Module Path.. nonsense path`, async () => {
         const moduleId = `xtz/fff`;
         const expectedPath = path.resolve(testDir, moduleId + ".js");
+
+        const actualPath = await fileLoader.getModulePath(moduleId, "js");
+        expect(actualPath).toBe(expectedPath);
+    });
+
+    it(`Get Module Path with file extension`, async () => {
+        const moduleId = `xtz/fff.json`;
+        const expectedPath = path.resolve(testDir, moduleId);
 
         const actualPath = await fileLoader.getModulePath(moduleId);
         expect(actualPath).toBe(expectedPath);
@@ -52,7 +60,16 @@ describe(`FileLoader Tests`, () => {
         const expectedPath = path.resolve(testDir, moduleId + ".js");
 
         const expectedContent = await asyncFileRead(expectedPath, "utf8");
-        const actualContent = await fileLoader.getModuleContent(moduleId);
+        const actualContent = await fileLoader.getModuleContent({moduleId, fileExtension: "js"});
+        expect(actualContent).toBe(expectedContent);
+    });
+
+    it(`Get Module Contents simpleModules/ModuleA - supplied path`, async () => {
+        const moduleId = `simpleModules/moduleA`;
+        const expectedPath = path.resolve(testDir, moduleId + ".js");
+
+        const expectedContent = await asyncFileRead(expectedPath, "utf8");
+        const actualContent = await fileLoader.getModuleContent({moduleId, modulePath: expectedPath});
         expect(actualContent).toBe(expectedContent);
     });
 
@@ -61,14 +78,14 @@ describe(`FileLoader Tests`, () => {
         const expectedPath = path.resolve(testDir, moduleId + ".js");
 
         const expectedContent = await asyncFileRead(expectedPath, "utf8");
-        const actualContent = await fileLoader.getModuleContent(moduleId);
+        const actualContent = await fileLoader.getModuleContent({moduleId, fileExtension: "js"});
         expect(actualContent).toBe(expectedContent);
     });
 
     it(`Get Module Contents - Should Error no file found`, async () => {
         const moduleId = `xxx/zzz`;
         try {
-            await fileLoader.getModuleContent(moduleId);
+            await fileLoader.getModuleContent({moduleId, fileExtension: "js"});
             expect("").toBe("Should have failed");
         } catch (e) {
             expect(e.message.match(/Unable to find file for module/)).toBeTruthy();
