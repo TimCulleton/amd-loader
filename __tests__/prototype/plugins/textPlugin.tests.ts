@@ -1,6 +1,7 @@
 import path = require("path");
 import { IGetModuleContentConfig } from "../../../src/prototype/amdLoader";
 import { FileLoader } from "../../../src/prototype/fileLoader";
+import messages = require("../../../src/prototype/log/messages");
 import { TextPlugin } from "../../../src/prototype/plugins/textPlugin";
 
 describe(`Text Plugin Tests`, () => {
@@ -48,7 +49,7 @@ describe(`Text Plugin Tests`, () => {
     });
 
     it(`Load Text Module (modulePath)`, async () => {
-        const moduleId = `test!simpleModules/textJsonData.json`;
+        const moduleId = `text!simpleModules/textJsonData.json`;
 
         const spyGetModuleContent = spyOn(fileLoader, "getModuleContent").and.returnValue(Promise.resolve("fake"));
         const content = await textPlugin.loadModule(moduleId);
@@ -62,11 +63,27 @@ describe(`Text Plugin Tests`, () => {
     });
 
     it(`Load JSON text module`, async () => {
-        const moduleId = `test!simpleModules/textJsonData.json`;
+        const moduleId = `text!simpleModules/textJsonData.json`;
         const content = await textPlugin.loadModule(moduleId);
 
         const json = JSON.parse(content);
         expect(json.name).toBe("sample json text data");
         expect(json.items).toBeTruthy();
+    });
+
+    it(`Unable to load module not supported prefix`, async (done) => {
+        const moduleId = `bad!simpleModules/textJsonData.json`;
+        try {
+            await textPlugin.loadModule(moduleId);
+            done.fail();
+        } catch (e) {
+            const expectedErrorMessage = messages.replace(messages.ERROR_UNABLE_TO_LOAD_MODULE_WRONG_PLUGIN, {
+                moduleId,
+                plugin: textPlugin.prefix,
+            });
+
+            expect((e as Error).message).toBe(expectedErrorMessage);
+            done();
+        }
     });
 });
