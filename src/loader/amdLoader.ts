@@ -70,6 +70,11 @@ export function requireModule(moduleId: string): Promise<IAmdModule> {
     });
 }
 
+export async function requireLoadedModule<T>(moduleId: string): Promise<T> {
+    const module = await requireModule(moduleId);
+    return module.exports;
+}
+
 /**
  * Load a AMD module by first
  * getting the contents of file and wrapping the contents

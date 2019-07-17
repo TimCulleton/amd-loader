@@ -1,0 +1,7 @@
+{
+    "name": "sample json text data",
+    "items": [
+        "a", "b", "c"
+    ],
+    "debug": true
+}
