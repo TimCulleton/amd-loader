@@ -8,6 +8,9 @@ export type T_ERROR_UNABLE_TO_FIND_FILE_FOR_MODULE =
 export type T_ERROR_UNABLE_TO_LOAD_MODULE_WRONG_PLUGIN =
     `Unable to load module: {moduleId} as it can not be processed by plugin: {plugin}`;
 
+export type T_INFO_LOADING_FILE_FOR_MODULE =
+    `Loading file: {filePath} for module: {moduleId}`;
+
 // ##################################
 // ########### Message Values
 // ##################################
@@ -17,6 +20,9 @@ export const ERROR_UNABLE_TO_FIND_FILE_FOR_MODULE: T_ERROR_UNABLE_TO_FIND_FILE_F
 
 export const ERROR_UNABLE_TO_LOAD_MODULE_WRONG_PLUGIN: T_ERROR_UNABLE_TO_LOAD_MODULE_WRONG_PLUGIN =
     `Unable to load module: {moduleId} as it can not be processed by plugin: {plugin}`;
+
+export const INFO_LOADING_FILE_FOR_MODULE: T_INFO_LOADING_FILE_FOR_MODULE =
+    `Loading file: {filePath} for module: {moduleId}`;
 
 // ##################################
 // ########### Message Properties
@@ -30,6 +36,11 @@ export interface IErrorUnableToFindFileForModule {
 export interface IErrorUnableToLoadModuleWrongPlugin {
     moduleId: string;
     plugin: string;
+}
+
+export interface IInfoLoadingFileForModule {
+    moduleId: string;
+    filePath: string;
 }
 
 // ##################################
@@ -46,6 +57,7 @@ export interface IErrorUnableToLoadModuleWrongPlugin {
 export type ValueType<T> =
     T extends T_ERROR_UNABLE_TO_FIND_FILE_FOR_MODULE ? IErrorUnableToFindFileForModule :
     T extends T_ERROR_UNABLE_TO_LOAD_MODULE_WRONG_PLUGIN ? IErrorUnableToLoadModuleWrongPlugin :
+    T extends T_INFO_LOADING_FILE_FOR_MODULE ? IInfoLoadingFileForModule :
     T extends string ? "object" : "undefined";
 
 /**
