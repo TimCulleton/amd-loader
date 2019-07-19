@@ -5,6 +5,8 @@ import { IModuleLoader } from "./amdLoader";
 import { IModuleLoaderConfig } from "./amdLoader";
 import { IModuleLoaderConfigOptions } from "./amdLoader";
 import { IGetModuleContentConfig } from "./amdLoader";
+import log = require("./log/log");
+import messages = require("./log/messages");
 
 const asyncFileRead = utils.promisify(fs.readFile);
 const asyncFileExists = utils.promisify(fs.exists);
@@ -54,10 +56,21 @@ export class FileLoader implements IModuleLoader {
 
         const fileExists = await asyncFileExists(modulePath);
 
+        log.debug(messages.replace(messages.INFO_LOADING_FILE_FOR_MODULE, {
+            moduleId: config.moduleId,
+            filePath: modulePath,
+        }));
+
         if (fileExists) {
             return asyncFileRead(modulePath, "utf8");
         } else {
-            throw new Error(`Unable to find file for module: ${config.moduleId} path: ${modulePath}`);
+            throw new Error(messages.replace(
+                messages.ERROR_UNABLE_TO_FIND_FILE_FOR_MODULE,
+                {
+                    moduleId: config.moduleId,
+                    modulePath: config.modulePath as string,
+                },
+            ));
         }
     }
 

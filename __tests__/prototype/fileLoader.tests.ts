@@ -103,4 +103,19 @@ describe(`FileLoader Tests`, () => {
         const actualPath = await fileLoader.getModulePath(moduleId);
         expect(actualPath).toBe(expectedPath);
     });
+
+    it(`Can load`, () => {
+        expect(fileLoader.canLoad("ss/dds/rr")).toBeTruthy();
+    });
+
+    it(`Update config`, () => {
+        fileLoader.updateConfig({
+            basePath: __dirname,
+        });
+
+        expect(fileLoader.config.basePath).toBe(__dirname);
+
+        fileLoader.updateConfig("basePath", "test");
+        expect(fileLoader.config.basePath).toBe("test");
+    });
 });
